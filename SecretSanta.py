@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import random
 import asyncio
-YOUR_BOT_TOKEN = 'MTE3NjE4NjM5Nzg4ODA5NDI5MA.GOvs18.VozWtToNw7bPxY-wH3N19NQ7jd4ZwqqkwB2L6Q'
+YOUR_BOT_TOKEN = 'MTE3NjE4NjM5Nzg4ODA5NDI5MA.GfFD1G.s_0-QnRXjrVU64eMPLWPSK6AXpO5oXsDor5xBY'
 intents = discord.Intents.all()
 intents.members = True
 
