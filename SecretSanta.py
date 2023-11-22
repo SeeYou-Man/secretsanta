@@ -15,7 +15,7 @@ async def on_ready():
 @bot.command(name='secretsanta')
 async def secretsanta(ctx):
     # Get the role named "Secret Santa"
-    role = discord.utils.get(ctx.guild.roles, name='Mustiga Modsen')
+    role = discord.utils.get(ctx.guild.roles, name='Secret Santa')
     if not role:
         await ctx.send("Role 'Secret Santa' not found.")
         return
