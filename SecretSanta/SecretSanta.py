@@ -110,6 +110,11 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
 
+# Enable app commands (slash commands)
+@bot.event
+async def setup_hook():
+    await bot.tree.sync()
+
 
 def _rotate_list(lst, k):
     """Return a new list rotated by k to the right: element i receives lst[(i+k) % n]."""
@@ -166,32 +171,32 @@ async def on_ready():
     logging.info(f'{bot.user} has connected to Discord!')
 
 
-@bot.command(name='secretsanta')
-@commands.guild_only()
-async def secretsanta(ctx, *, role_name: str = 'Secret Santa'):
-    """Assign each member with the given role a unique receiver (everyone picked once, nobody receives themself).
+@bot.tree.command(name='secretsanta', description='Start Secret Santa assignment for a role')
+@discord.app_commands.describe(role_name='The name of the role to use (default: Secret Santa)')
+@discord.app_commands.guild_only()
+async def secretsanta(interaction: discord.Interaction, role_name: str = 'Secret Santa'):
+    """Assign each member with the given role a unique receiver (everyone picked once, nobody receives themself)."""
+    await interaction.response.defer()
 
-    Usage: /secretsanta or /secretsanta Role Name
-    """
-    role = discord.utils.get(ctx.guild.roles, name=role_name)
+    role = discord.utils.get(interaction.guild.roles, name=role_name)
     if not role:
-        await ctx.send(f"Role '{role_name}' not found.")
+        await interaction.followup.send(f"Role '{role_name}' not found.")
         return
 
     # Exclude bots from the participant list
     members = [m for m in role.members if not m.bot]
     n = len(members)
     if n < 2:
-        await ctx.send('Need at least 2 non-bot members with that role to run Secret Santa.')
+        await interaction.followup.send('Need at least 2 non-bot members with that role to run Secret Santa.')
         return
 
     # Create a derangement respecting any configured exclusions
     assignments = _make_assignments(members, exclusions=exclusion_store.exclusions, single_cycle=False)
     if assignments is None:
-        await ctx.send('Unable to generate Secret Santa assignments with the current exclusions/constraints.')
+        await interaction.followup.send('Unable to generate Secret Santa assignments with the current exclusions/constraints.')
         return
 
-    async def _send_and_report(ctx, assignments, role_name):
+    async def _send_and_report(interaction, assignments, role_name):
         failed = []
         for giver, receiver in assignments:
             giver_name = giver.display_name
@@ -208,18 +213,18 @@ async def secretsanta(ctx, *, role_name: str = 'Secret Santa'):
             await asyncio.sleep(0.5)
 
         if not failed:
-            await ctx.send(f'Secret Santa assignments sent by DM to {len(assignments)} members (role: {role_name}).')
+            await interaction.followup.send(f'Secret Santa assignments sent by DM to {len(assignments)} members (role: {role_name}).')
         else:
             failed_names = ', '.join([m.display_name for m in failed])
-            await ctx.send(
+            await interaction.followup.send(
                 f'Sent assignments to {len(assignments) - len(failed)} members; failed to DM {len(failed)} members: {failed_names}. '
                 'Check that those users allow DMs from server members or try contacting them directly.'
             )
 
-    await _send_and_report(ctx, assignments, role_name)
+    await _send_and_report(interaction, assignments, role_name)
 
 
-async def send_assignments(ctx, assignments, role_name: str):
+async def send_assignments(interaction: discord.Interaction, assignments, role_name: str):
     """Send DMs for assignments and report back in channel."""
     failed = []
     for giver, receiver in assignments:
@@ -237,107 +242,110 @@ async def send_assignments(ctx, assignments, role_name: str):
         await asyncio.sleep(0.5)
 
     if not failed:
-        await ctx.send(f'Secret Santa assignments sent by DM to {len(assignments)} members (role: {role_name}).')
+        await interaction.followup.send(f'Secret Santa assignments sent by DM to {len(assignments)} members (role: {role_name}).')
     else:
         failed_names = ', '.join([m.display_name for m in failed])
-        await ctx.send(
+        await interaction.followup.send(
             f'Sent assignments to {len(assignments) - len(failed)} members; failed to DM {len(failed)} members: {failed_names}. '
             'Check that those users allow DMs from server members or try contacting them directly.'
         )
 
 
-@bot.command(name='exclude')
-@commands.guild_only()
-async def exclude(ctx, user1: discord.Member, user2: discord.Member):
-    """Exclude two users from being assigned to each other (both directions).
-
-    Usage: /exclude @UserA @UserB
-    """
+@bot.tree.command(name='exclude', description='Exclude two users from being assigned to each other')
+@discord.app_commands.describe(
+    user1='First user to exclude',
+    user2='Second user to exclude'
+)
+@discord.app_commands.guild_only()
+async def exclude(interaction: discord.Interaction, user1: discord.Member, user2: discord.Member):
+    """Exclude two users from being assigned to each other (both directions)."""
+    await interaction.response.defer()
     if user1.id == user2.id:
-        await ctx.send("Cannot exclude a user from themselves.")
+        await interaction.followup.send("Cannot exclude a user from themselves.")
         return
 
     if exclusion_store.add(user1, user2):
-        await ctx.send(f'Exclusion added: {user1.display_name} ↔ {user2.display_name}')
+        await interaction.followup.send(f'Exclusion added: {user1.display_name} ↔ {user2.display_name}')
     else:
-        await ctx.send(f'Exclusion already exists between {user1.display_name} and {user2.display_name}.')
+        await interaction.followup.send(f'Exclusion already exists between {user1.display_name} and {user2.display_name}.')
 
 
-@bot.command(name='remove_exclusion')
-@commands.guild_only()
-async def remove_exclusion(ctx, user1: discord.Member, user2: discord.Member):
-    """Remove an exclusion between two users.
-
-    Usage: /remove_exclusion @UserA @UserB
-    """
+@bot.tree.command(name='remove_exclusion', description='Remove an exclusion between two users')
+@discord.app_commands.describe(
+    user1='First user to remove exclusion for',
+    user2='Second user to remove exclusion for'
+)
+@discord.app_commands.guild_only()
+async def remove_exclusion(interaction: discord.Interaction, user1: discord.Member, user2: discord.Member):
+    """Remove an exclusion between two users."""
+    await interaction.response.defer()
     if exclusion_store.remove(user1, user2):
-        await ctx.send(f'Exclusion removed between {user1.display_name} and {user2.display_name}.')
+        await interaction.followup.send(f'Exclusion removed between {user1.display_name} and {user2.display_name}.')
     else:
-        await ctx.send(f'No exclusion found between {user1.display_name} and {user2.display_name}.')
+        await interaction.followup.send(f'No exclusion found between {user1.display_name} and {user2.display_name}.')
 
 
-@bot.command(name='list_exclusions', aliases=['exclusions'])
-@commands.guild_only()
-async def list_exclusions(ctx):
-    """List all configured exclusions.
-
-    Usage: /list_exclusions
-    """
-    await ctx.send(exclusion_store.format_list())
+@bot.tree.command(name='list_exclusions', description='List all configured exclusions')
+@discord.app_commands.guild_only()
+async def list_exclusions(interaction: discord.Interaction):
+    """List all configured exclusions."""
+    await interaction.response.send_message(exclusion_store.format_list())
 
 
-@bot.command(name='circle')
-@commands.guild_only()
-async def circle(ctx, *, role_name: str = 'Secret Santa'):
-    """Generate a single-cycle Secret Santa (one big circle) for the given role.
-
-    Uses rotation by k where gcd(k, n) == 1 to guarantee a single cycle. Respects exclusions.
-    """
-    role = discord.utils.get(ctx.guild.roles, name=role_name)
+@bot.tree.command(name='circle', description='Generate a single-cycle Secret Santa (one big circle)')
+@discord.app_commands.describe(role_name='The name of the role to use (default: Secret Santa)')
+@discord.app_commands.guild_only()
+async def circle(interaction: discord.Interaction, role_name: str = 'Secret Santa'):
+    """Generate a single-cycle Secret Santa where everyone forms one big circle."""
+    await interaction.response.defer()
+    role = discord.utils.get(interaction.guild.roles, name=role_name)
     if not role:
-        await ctx.send(f"Role '{role_name}' not found.")
+        await interaction.followup.send(f"Role '{role_name}' not found.")
         return
 
     members = [m for m in role.members if not m.bot]
     n = len(members)
     if n < 2:
-        await ctx.send('Need at least 2 non-bot members with that role to run Secret Santa.')
+        await interaction.followup.send('Need at least 2 non-bot members with that role to run Secret Santa.')
         return
 
     assignments = _make_assignments(members, exclusions=exclusion_store.exclusions, single_cycle=True)
     if assignments is None:
-        await ctx.send('Unable to generate a single-cycle assignment under current exclusions/constraints.')
+        await interaction.followup.send('Unable to generate a single-cycle assignment under current exclusions/constraints.')
         return
 
-    await send_assignments(ctx, assignments, role_name)
+    await send_assignments(interaction, assignments, role_name)
 
 
-@bot.command(name='circle_exclude')
-@commands.guild_only()
-async def circle_exclude(ctx, user1: discord.Member, user2: discord.Member, *, role_name: str = 'Secret Santa'):
-    """Generate a single-cycle assignment while temporarily excluding a given pair from being assigned to each other.
-
-    Usage: /circle_exclude @UserA @UserB
-    """
+@bot.tree.command(name='circle_exclude', description='Generate a single-cycle assignment while temporarily excluding a pair')
+@discord.app_commands.describe(
+    user1='First user to temporarily exclude',
+    user2='Second user to temporarily exclude',
+    role_name='The name of the role to use (default: Secret Santa)'
+)
+@discord.app_commands.guild_only()
+async def circle_exclude(interaction: discord.Interaction, user1: discord.Member, user2: discord.Member, role_name: str = 'Secret Santa'):
+    """Generate a single-cycle assignment while temporarily excluding a given pair from being assigned to each other."""
+    await interaction.response.defer()
     temp_pair = frozenset((user1.id, user2.id))
-    role = discord.utils.get(ctx.guild.roles, name=role_name)
+    role = discord.utils.get(interaction.guild.roles, name=role_name)
     if not role:
-        await ctx.send(f"Role '{role_name}' not found.")
+        await interaction.followup.send(f"Role '{role_name}' not found.")
         return
 
     members = [m for m in role.members if not m.bot]
     n = len(members)
     if n < 2:
-        await ctx.send('Need at least 2 non-bot members with that role to run Secret Santa.')
+        await interaction.followup.send('Need at least 2 non-bot members with that role to run Secret Santa.')
         return
 
     # Use current exclusions plus temporary pair
     assignments = _make_assignments(members, exclusions=exclusion_store.exclusions | {temp_pair}, single_cycle=True)
     if assignments is None:
-        await ctx.send('Unable to generate a single-cycle assignment with that temporary exclusion.')
+        await interaction.followup.send('Unable to generate a single-cycle assignment with that temporary exclusion.')
         return
 
-    await send_assignments(ctx, assignments, role_name)
+    await send_assignments(interaction, assignments, role_name)
 
 
 if __name__ == '__main__' and DISCORD_BOT_TOKEN:
