@@ -11,25 +11,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          
-      - name: Run tests
+          pip install coverage codecov
+
+      - name: Run tests with coverage
         run: |
-          pytest tests/ -v
-          
+          coverage run -m pytest tests/ -v
+          coverage xml -i -o coverage.xml
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+        # If CODECOV_TOKEN is not set for private repos, this step will still
+        # attempt an upload; set the secret in repo settings if required.
+
       - name: Run linting
         run: |
           flake8 . --count --max-line-length=100 --statistics
-          
+
       - name: Run simulation tests
         run: |
           python simulate_assignments.py --count 6

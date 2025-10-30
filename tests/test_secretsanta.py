@@ -14,7 +14,7 @@ from SecretSanta import (
     remove_exclusion,
     list_exclusions
 )
-from .conftest import MockMember, MockRole, MockContext
+from conftest import MockMember, MockRole, MockContext
 
 
 def test_rotate_list():

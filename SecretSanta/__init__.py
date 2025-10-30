@@ -1,19 +1,40 @@
-"""Compatibility package so `import SecretSanta` works for the test suite.
+"""Package entry point for the SecretSanta implementation.
 
-This package lazily loads the top-level `SecretSanta.py` module and re-exports
-its public names so `from SecretSanta import ...` continues to work.
+This module re-exports the public names from the in-package implementation
+module `SecretSanta.SecretSanta` so tests and code that import
+`from SecretSanta import ...` continue to work.
 """
-from importlib import util
-from pathlib import Path
+"""Public exports for the SecretSanta package.
 
-_impl_path = Path(__file__).parent.parent / 'SecretSanta.py'
-_spec = util.spec_from_file_location('SecretSanta._impl', str(_impl_path))
-_impl = util.module_from_spec(_spec)
-_spec.loader.exec_module(_impl)
+We explicitly re-export the symbols that tests and external code depend on.
+Keeping an explicit __all__ avoids leaking internal helpers accidentally.
+"""
+from .SecretSanta import (
+	bot,
+	secretsanta,
+	exclude,
+	remove_exclusion,
+	list_exclusions,
+	circle,
+	circle_exclude,
+	send_assignments,
+	_rotate_list,
+	_make_assignments,
+	ExclusionStore,
+	exclusion_store,
+)
 
-# Re-export public names from the implementation module
-for _name, _obj in vars(_impl).items():
-    if not _name.startswith('_'):
-        globals()[_name] = _obj
-
-__all__ = [n for n in globals().keys() if not n.startswith('_')]
+__all__ = [
+	'bot',
+	'secretsanta',
+	'exclude',
+	'remove_exclusion',
+	'list_exclusions',
+	'circle',
+	'circle_exclude',
+	'send_assignments',
+	'_rotate_list',
+	'_make_assignments',
+	'ExclusionStore',
+	'exclusion_store',
+]

@@ -1,0 +1,12 @@
+{
+  "exclusions": [
+    [
+      1,
+      2
+    ]
+  ],
+  "display_names": {
+    "1": "Alice",
+    "2": "Bob"
+  }
+}

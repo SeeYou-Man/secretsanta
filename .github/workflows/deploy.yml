@@ -1,0 +1,56 @@
+name: Build and (optionally) push Docker image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GitHub Container Registry (if CR_PAT provided)
+        if: ${{ secrets.CR_PAT != '' }}
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Build and push image to GHCR (if CR_PAT provided)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: ${{ secrets.CR_PAT != '' }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest
+
+      - name: Save image artifact
+        if: ${{ secrets.CR_PAT == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-image-tar
+          path: |
+            image.tar
+        # If not pushing, produce a tarball for manual use
+      - name: Export image tar (fallback)
+        if: ${{ secrets.CR_PAT == '' }}
+        run: |
+          docker build -t secretsanta:local .
+          docker save secretsanta:local -o image.tar
+
+      - name: Deployment notes
+        run: |
+          echo "If you provided CR_PAT secret, image was pushed to GHCR under ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest"
+          echo "Otherwise an image tarball artifact was produced for download."

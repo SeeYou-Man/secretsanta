@@ -1,5 +1,8 @@
 # Secretsanta
 
+![CI](https://github.com/SeeYou-Man/secretsanta/actions/workflows/ci.yml/badge.svg)
+![Codecov](https://codecov.io/gh/SeeYou-Man/secretsanta/branch/main/graph/badge.svg)
+
 Secretsanta Discord Bot
 
 This is a small Discord bot that assigns Secret Santa recipients to members who have a specific role.
