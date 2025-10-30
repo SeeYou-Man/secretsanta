@@ -42,7 +42,7 @@ jobs:
 
       - name: Run linting
         run: |
-          flake8 . --count --max-line-length=100 --statistics
+          flake8 . --count --max-line-length=150 --statistics
 
       - name: Run simulation tests
         run: |

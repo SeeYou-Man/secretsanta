@@ -12,6 +12,7 @@ import pathlib
 # File to store exclusions (IDs and display names for readability)
 EXCLUSIONS_FILE = pathlib.Path('exclusions.json')
 
+
 class ExclusionStore:
     """Manages persistent storage of exclusions with JSON backing."""
     def __init__(self):
@@ -328,4 +329,3 @@ async def circle_exclude(ctx, user1: discord.Member, user2: discord.Member, *, r
 
 if DISCORD_BOT_TOKEN:
     bot.run(DISCORD_BOT_TOKEN)
-

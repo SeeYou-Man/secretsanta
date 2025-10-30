@@ -13,6 +13,7 @@ import pathlib
 EXCLUSIONS_FILE = pathlib.Path('exclusions.json')
 DEFAULT_EXCLUSIONS_FILE = EXCLUSIONS_FILE
 
+
 class ExclusionStore:
     """Manages persistent storage of exclusions with JSON backing."""
     # allow tests to monkeypatch this path as ExclusionStore.EXCLUSIONS_FILE
