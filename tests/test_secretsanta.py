@@ -1,14 +1,11 @@
 """Unit tests for Secret Santa bot core functionality."""
 import pytest
-import pathlib
 import json
-from math import gcd
 
 from SecretSanta import (
     _rotate_list,
     _make_assignments,
     ExclusionStore,
-    secretsanta,
     circle,
     exclude,
     remove_exclusion,
@@ -72,7 +69,7 @@ def test_make_assignments_single_cycle(n):
 
 class TestExclusionStore:
     """Test ExclusionStore functionality."""
-    
+
     @pytest.fixture
     def store(self, tmp_path):
         """Create a temporary ExclusionStore for testing."""
@@ -87,12 +84,12 @@ class TestExclusionStore:
         """Test adding and removing exclusions."""
         user1 = MockMember(1, "Alice")
         user2 = MockMember(2, "Bob")
-        
+ 
         # Test adding
         assert store.add(user1, user2)
         assert not store.add(user2, user1)  # reverse should fail
         assert len(store.exclusions) == 1
-        
+
         # Test removing
         assert store.remove(user1, user2)
         assert len(store.exclusions) == 0
@@ -103,12 +100,12 @@ class TestExclusionStore:
         user1 = MockMember(1, "Alice")
         user2 = MockMember(2, "Bob")
         store.add(user1, user2)
-        
+
         # Check file contents
         data = json.loads(store.EXCLUSIONS_FILE.read_text())
         assert len(data["exclusions"]) == 1
         assert data["display_names"][str(user1.id)] == "Alice"
-        
+
         # New store should load existing exclusions
         store2 = ExclusionStore()
         assert len(store2.exclusions) == 1
@@ -120,10 +117,10 @@ async def test_exclude_command():
     ctx = MockContext()
     user1 = MockMember(1, "Alice")
     user2 = MockMember(2, "Bob")
-    
+
     await exclude(ctx, user1, user2)
     assert "Exclusion added" in ctx.last_message
-    
+
     # Try adding again
     await exclude(ctx, user2, user1)
     assert "already exists" in ctx.last_message
@@ -136,7 +133,7 @@ async def test_circle_command():
     members = [MockMember(i, f"Person{i}") for i in range(5)]
     role = MockRole("Secret Santa", members)
     ctx.guild = type("Guild", (), {"roles": [role]})
-    
+
     await circle(ctx, role_name="Secret Santa")
     assert "sent by DM" in ctx.last_message
 
@@ -147,11 +144,11 @@ async def test_list_exclusions_command():
     ctx = MockContext()
     user1 = MockMember(1, "Alice")
     user2 = MockMember(2, "Bob")
-    
+
     # Start empty
     await list_exclusions(ctx)
     assert "No exclusions" in ctx.last_message
-    
+
     # Add one and list
     await exclude(ctx, user1, user2)
     await list_exclusions(ctx)

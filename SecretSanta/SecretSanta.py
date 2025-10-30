@@ -18,6 +18,7 @@ class ExclusionStore:
     """Manages persistent storage of exclusions with JSON backing."""
     # allow tests to monkeypatch this path as ExclusionStore.EXCLUSIONS_FILE
     EXCLUSIONS_FILE = EXCLUSIONS_FILE
+    
     def __init__(self):
         self.exclusions = set()  # set of frozenset(id1, id2)
         self.display_names = {}  # id -> most recent display_name mapping
@@ -88,6 +89,7 @@ class ExclusionStore:
             name2 = self.display_names.get(str(id2), f'Unknown({id2})')
             lines.append(f'- {name1} ↔ {name2}')
         return 'Current exclusions:\n' + '\n'.join(sorted(lines))
+
 
 # Global exclusion store, loaded at startup
 exclusion_store = ExclusionStore()

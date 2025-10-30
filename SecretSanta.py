@@ -84,6 +84,7 @@ class ExclusionStore:
 # Global exclusion store, loaded at startup
 exclusion_store = ExclusionStore()
 
+
 logging.basicConfig(level=logging.INFO)
 
 # Read the token from an environment variable for safety

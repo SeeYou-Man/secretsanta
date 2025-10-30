@@ -22,7 +22,7 @@ def rotate_list(lst, k):
 def make_assignments(members, exclusions=None, single_cycle=False, max_attempts=2000):
     """Return list of (giver, receiver) tuples such that nobody gets themselves
     and every receiver is unique. Supports exclusions and single-cycle mode.
-    
+ 
     Args:
         members: list of names/IDs
         exclusions: set of frozenset(id1, id2) pairs to avoid
@@ -140,7 +140,7 @@ def main():
             print('\nWarning: Assignment is not a single cycle!')
         else:
             print('\nVerified: Assignment is a single cycle.')
-    
+
     print('Validation:', reason)
 
 

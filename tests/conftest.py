@@ -1,6 +1,7 @@
 """Mocks for Discord objects used in tests."""
 from typing import Optional, List
-import discord
+import pytest
+import SecretSanta
 
 
 class MockMember:
@@ -43,10 +44,6 @@ class MockContext:
     def last_message(self) -> Optional[str]:
         """Get the last message sent, if any."""
         return self.sent_messages[-1] if self.sent_messages else None
-
-
-import pytest
-import SecretSanta
 
 
 @pytest.fixture(autouse=True)
