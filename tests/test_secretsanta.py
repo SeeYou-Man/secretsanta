@@ -10,7 +10,7 @@ from SecretSanta import (
     exclude,
     list_exclusions
 )
-from conftest import MockMember, MockRole, MockContext
+from conftest import MockMember, MockRole, MockContext, MockInteraction
 
 
 def test_rotate_list():
@@ -113,43 +113,44 @@ class TestExclusionStore:
 @pytest.mark.asyncio
 async def test_exclude_command():
     """Test the exclude command."""
-    ctx = MockContext()
+    interaction = MockInteraction()
     user1 = MockMember(1, "Alice")
     user2 = MockMember(2, "Bob")
 
-    await exclude(ctx, user1, user2)
-    assert "Exclusion added" in ctx.last_message
+    # app command objects expose the original coroutine as `.callback`
+    await exclude.callback(interaction, user1, user2)
+    assert "Exclusion added" in interaction.last_message
 
     # Try adding again
-    await exclude(ctx, user2, user1)
-    assert "already exists" in ctx.last_message
+    await exclude.callback(interaction, user2, user1)
+    assert "already exists" in interaction.last_message
 
 
 @pytest.mark.asyncio
 async def test_circle_command():
     """Test the circle command."""
-    ctx = MockContext()
+    interaction = MockInteraction()
     members = [MockMember(i, f"Person{i}") for i in range(5)]
     role = MockRole("Secret Santa", members)
-    ctx.guild = type("Guild", (), {"roles": [role]})
+    interaction.guild = type("Guild", (), {"roles": [role]})
 
-    await circle(ctx, role_name="Secret Santa")
-    assert "sent by DM" in ctx.last_message
+    await circle.callback(interaction, role_name="Secret Santa")
+    assert "sent by DM" in interaction.last_message
 
 
 @pytest.mark.asyncio
 async def test_list_exclusions_command():
     """Test listing exclusions."""
-    ctx = MockContext()
+    interaction = MockInteraction()
     user1 = MockMember(1, "Alice")
     user2 = MockMember(2, "Bob")
 
     # Start empty
-    await list_exclusions(ctx)
-    assert "No exclusions" in ctx.last_message
+    await list_exclusions.callback(interaction)
+    assert "No exclusions" in interaction.last_message
 
     # Add one and list
-    await exclude(ctx, user1, user2)
-    await list_exclusions(ctx)
-    assert "Alice" in ctx.last_message
-    assert "Bob" in ctx.last_message
+    await exclude.callback(interaction, user1, user2)
+    await list_exclusions.callback(interaction)
+    assert "Alice" in interaction.last_message
+    assert "Bob" in interaction.last_message

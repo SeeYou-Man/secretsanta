@@ -46,6 +46,41 @@ class MockContext:
         return self.sent_messages[-1] if self.sent_messages else None
 
 
+class MockInteraction:
+    """Minimal mock of discord.Interaction for testing app commands.
+
+    Provides a `response` object with `defer()` and `send_message()` and a
+    `followup` object with `send()` so tests can assert messages.
+    """
+    def __init__(self):
+        self.guild = None
+        self.sent_messages = []
+        self.response = self.Response(self)
+        self.followup = self.Followup(self)
+
+    class Response:
+        def __init__(self, parent):
+            self._parent = parent
+
+        async def defer(self):
+            # no-op for tests
+            return None
+
+        async def send_message(self, content: str):
+            self._parent.sent_messages.append(content)
+
+    class Followup:
+        def __init__(self, parent):
+            self._parent = parent
+
+        async def send(self, content: str):
+            self._parent.sent_messages.append(content)
+
+    @property
+    def last_message(self) -> Optional[str]:
+        return self.sent_messages[-1] if self.sent_messages else None
+
+
 @pytest.fixture(autouse=True)
 def clear_exclusions():
     """Ensure exclusion_store starts empty for each test to avoid cross-test pollution."""
