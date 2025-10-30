@@ -18,7 +18,7 @@ class ExclusionStore:
     """Manages persistent storage of exclusions with JSON backing."""
     # allow tests to monkeypatch this path as ExclusionStore.EXCLUSIONS_FILE
     EXCLUSIONS_FILE = EXCLUSIONS_FILE
-    
+
     def __init__(self):
         self.exclusions = set()  # set of frozenset(id1, id2)
         self.display_names = {}  # id -> most recent display_name mapping

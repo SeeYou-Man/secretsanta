@@ -81,6 +81,7 @@ class ExclusionStore:
             lines.append(f'- {name1} ↔ {name2}')
         return 'Current exclusions:\n' + '\n'.join(sorted(lines))
 
+
 # Global exclusion store, loaded at startup
 exclusion_store = ExclusionStore()
 

@@ -26,16 +26,16 @@ from .SecretSanta import (
 
 
 __all__ = [
-	'bot',
-	'secretsanta',
-	'exclude',
-	'remove_exclusion',
-	'list_exclusions',
-	'circle',
-	'circle_exclude',
-	'send_assignments',
-	'_rotate_list',
-	'_make_assignments',
-	'ExclusionStore',
-	'exclusion_store',
+    'bot',
+    'secretsanta',
+    'exclude',
+    'remove_exclusion',
+    'list_exclusions',
+    'circle',
+    'circle_exclude',
+    'send_assignments',
+    '_rotate_list',
+    '_make_assignments',
+    'ExclusionStore',
+    'exclusion_store',
 ]

@@ -8,7 +8,6 @@ from SecretSanta import (
     ExclusionStore,
     circle,
     exclude,
-    remove_exclusion,
     list_exclusions
 )
 from conftest import MockMember, MockRole, MockContext
@@ -84,7 +83,7 @@ class TestExclusionStore:
         """Test adding and removing exclusions."""
         user1 = MockMember(1, "Alice")
         user2 = MockMember(2, "Bob")
- 
+
         # Test adding
         assert store.add(user1, user2)
         assert not store.add(user2, user1)  # reverse should fail
