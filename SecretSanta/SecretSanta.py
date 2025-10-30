@@ -110,6 +110,7 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
 
+
 # Enable app commands (slash commands)
 @bot.event
 async def setup_hook():

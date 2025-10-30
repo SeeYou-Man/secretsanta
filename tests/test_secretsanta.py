@@ -10,7 +10,7 @@ from SecretSanta import (
     exclude,
     list_exclusions
 )
-from conftest import MockMember, MockRole, MockContext, MockInteraction
+from conftest import MockMember, MockRole, MockInteraction
 
 
 def test_rotate_list():
