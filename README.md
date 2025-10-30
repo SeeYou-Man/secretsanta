@@ -117,4 +117,35 @@ Secrets in GitHub
 
 If you ever hook up a deployment pipeline from GitHub, don't put the token in the repo. Instead add it to the repository Settings → Secrets → Actions as `DISCORD_BOT_TOKEN`. Your deploy workflow can reference it from secrets.
 
-If you'd like, I can add an example deploy workflow for a specific platform (Heroku, Railway or a simple Docker image + GitHub Actions deploy). Tell me which hosting provider you prefer and I will add a concrete workflow / Dockerfile.
+Setting repository secrets (quick guide)
+---------------------------------------
+
+1. In the GitHub web UI go to: Settings → Secrets and variables → Actions → New repository secret.
+	- Add `DISCORD_BOT_TOKEN` with your bot token as the value.
+	- If you want the workflow to push the built Docker image to GitHub Container Registry (GHCR), create a Personal Access Token (PAT) and add it as `CR_PAT`.
+
+2. Recommended PAT scopes for `CR_PAT`:
+	- `write:packages` (required to push container images)
+	- `read:packages` (to read images)
+	- `repo` (only required if the repository is private and the workflow needs repo access)
+
+3. Add secrets from the command line (optional). With the GitHub CLI installed you can run:
+
+```powershell
+gh secret set DISCORD_BOT_TOKEN --body "your_bot_token_here"
+gh secret set CR_PAT --body "ghp_xxx_your_pat_here"
+```
+
+Triggering the deploy workflow
+------------------------------
+
+- Manual: In GitHub, open the Actions tab, select the workflow named "Build and (optionally) push Docker image" and click "Run workflow". You can select the branch to run it on.
+- Push: The workflow also runs automatically on pushes to the `main` branch (see `.github/workflows/deploy.yml`). Pushing a commit to `main` will start the job.
+
+Notes
+-----
+- If you provide `CR_PAT`, the workflow will log in to GHCR and push the built image to `ghcr.io/<owner>/<repo>:latest`.
+- If `CR_PAT` is not provided, the workflow produces an image tarball artifact for manual download and then you can load it locally with `docker load -i image.tar`.
+- Never commit `DISCORD_BOT_TOKEN` or any PAT to source control. Treat secrets as sensitive data and rotate them if you believe they were exposed.
+
+If you'd like, I can add an example deploy workflow for a specific platform (Heroku, Railway) or adjust the workflow to push to Docker Hub instead—tell me which provider you prefer and I will add a concrete workflow / Dockerfile.
