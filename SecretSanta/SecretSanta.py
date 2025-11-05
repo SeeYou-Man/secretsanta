@@ -152,7 +152,7 @@ def _make_assignments(members, exclusions=None, single_cycle=False, max_attempts
                 return False
             if frozenset((giver.id, receiver.id)) in exclusions:
                 return False
-        return True   
+        return True
 
     if single_cycle:
         # Find k where gcd(k,n)==1 to ensure single cycle
