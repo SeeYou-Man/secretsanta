@@ -133,10 +133,17 @@ def _make_assignments(members, exclusions=None, single_cycle=False, max_attempts
     - exclusions: set of frozenset({id1, id2}) to avoid pairings in either direction
     - single_cycle: if True, produce a single-cycle permutation (one big circle)
     """
-    exclusions = exclusions or set()
+
+    print("Making assignments with members:", members)
+    print("Exclusions:", exclusions)
+    print("Single cycle:", single_cycle)
+
+    random.shuffle(members)
     n = len(members)
     if n < 2:
-        return None
+        raise ValueError('Need at least 2 members')
+
+    exclusions = exclusions or set()
 
     # Helper to test a receivers list against exclusions
     def valid_with_receivers(receivers):
@@ -145,26 +152,55 @@ def _make_assignments(members, exclusions=None, single_cycle=False, max_attempts
                 return False
             if frozenset((giver.id, receiver.id)) in exclusions:
                 return False
-        return True
+        return True    
 
     if single_cycle:
-        # Rotate by k with gcd(k,n) == 1 to ensure one cycle.
+        # Find k where gcd(k,n)==1 to ensure single cycle
         ks = [k for k in range(1, n) if gcd(k, n) == 1]
         random.shuffle(ks)
         for k in ks:
             receivers = _rotate_list(members, k)
             if valid_with_receivers(receivers):
+                print(f"Single-cycle assignment found with k={k}: {len(list(zip(members, receivers)))} assignments")
                 return list(zip(members, receivers))
-        return None
+            else:
+                print(f"k={k} invalid") #TODO: Fix so it automatically retries with different shuffles incase of failure
+        return None  # no valid single-cycle assignment possible
 
     # Not single_cycle: find any derangement that respects exclusions
-    receivers = [m for m in members]
+    receivers = members.copy()
     for attempt in range(max_attempts):
         random.shuffle(receivers)
         if valid_with_receivers(receivers):
             return list(zip(members, receivers))
     # If random attempts fail, there's likely no valid assignment under these constraints
     return None
+
+async def send_assignments(interaction: discord.Interaction, assignments, role_name: str):
+    """Send DMs for assignments and report back in channel."""
+    failed = []
+    for giver, receiver in assignments:
+        giver_name = giver.display_name
+        receiver_name = receiver.display_name
+        message = (
+            f"God jul {giver_name}! Jag har något att säga till dig — håll det hemligt:\n"
+            f"Du har blivit tilldelad att ge en julklapp till {receiver_name}."
+        )
+        try:
+            await giver.send(message)
+        except Exception:
+            logging.exception(f'Failed to send DM to {giver} ({giver.id})')
+            failed.append(giver)
+        await asyncio.sleep(0.5)
+
+    if not failed:
+        await interaction.followup.send(f'Secret Santa assignments sent by DM to {len(assignments)} members (role: {role_name}).')
+    else:
+        failed_names = ', '.join([m.display_name for m in failed])
+        await interaction.followup.send(
+            f'Sent assignments to {len(assignments) - len(failed)} members; failed to DM {len(failed)} members: {failed_names}. '
+            'Check that those users allow DMs from server members or try contacting them directly.'
+        )
 
 
 @bot.event
@@ -196,60 +232,7 @@ async def secretsanta(interaction: discord.Interaction, role_name: str = 'Secret
     if assignments is None:
         await interaction.followup.send('Unable to generate Secret Santa assignments with the current exclusions/constraints.')
         return
-
-    async def _send_and_report(interaction, assignments, role_name):
-        failed = []
-        for giver, receiver in assignments:
-            giver_name = giver.display_name
-            receiver_name = receiver.display_name
-            message = (
-                f"God jul {giver_name}! Jag har något att säga till dig — håll det hemligt:\n"
-                f"Du har blivit tilldelad att ge en julklapp till {receiver_name}."
-            )
-            try:
-                await giver.send(message)
-            except Exception:
-                logging.exception(f'Failed to send DM to {giver} ({giver.id})')
-                failed.append(giver)
-            await asyncio.sleep(0.5)
-
-        if not failed:
-            await interaction.followup.send(f'Secret Santa assignments sent by DM to {len(assignments)} members (role: {role_name}).')
-        else:
-            failed_names = ', '.join([m.display_name for m in failed])
-            await interaction.followup.send(
-                f'Sent assignments to {len(assignments) - len(failed)} members; failed to DM {len(failed)} members: {failed_names}. '
-                'Check that those users allow DMs from server members or try contacting them directly.'
-            )
-
-    await _send_and_report(interaction, assignments, role_name)
-
-
-async def send_assignments(interaction: discord.Interaction, assignments, role_name: str):
-    """Send DMs for assignments and report back in channel."""
-    failed = []
-    for giver, receiver in assignments:
-        giver_name = giver.display_name
-        receiver_name = receiver.display_name
-        message = (
-            f"God jul {giver_name}! Jag har något att säga till dig — håll det hemligt:\n"
-            f"Du har blivit tilldelad att ge en julklapp till {receiver_name}."
-        )
-        try:
-            await giver.send(message)
-        except Exception:
-            logging.exception(f'Failed to send DM to {giver} ({giver.id})')
-            failed.append(giver)
-        await asyncio.sleep(0.5)
-
-    if not failed:
-        await interaction.followup.send(f'Secret Santa assignments sent by DM to {len(assignments)} members (role: {role_name}).')
-    else:
-        failed_names = ', '.join([m.display_name for m in failed])
-        await interaction.followup.send(
-            f'Sent assignments to {len(assignments) - len(failed)} members; failed to DM {len(failed)} members: {failed_names}. '
-            'Check that those users allow DMs from server members or try contacting them directly.'
-        )
+    await send_assignments(interaction, assignments, role_name)
 
 
 @bot.tree.command(name='exclude', description='Exclude two users from being assigned to each other')
@@ -311,6 +294,7 @@ async def circle(interaction: discord.Interaction, role_name: str = 'Secret Sant
         return
 
     assignments = _make_assignments(members, exclusions=exclusion_store.exclusions, single_cycle=True)
+
     if assignments is None:
         await interaction.followup.send('Unable to generate a single-cycle assignment under current exclusions/constraints.')
         return
@@ -345,7 +329,6 @@ async def circle_exclude(interaction: discord.Interaction, user1: discord.Member
     if assignments is None:
         await interaction.followup.send('Unable to generate a single-cycle assignment with that temporary exclusion.')
         return
-
     await send_assignments(interaction, assignments, role_name)
 
 

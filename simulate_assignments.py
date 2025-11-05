@@ -92,7 +92,7 @@ def main():
     elif args.count:
         members = [f'Person{i+1}' for i in range(args.count)]
     else:
-        members = ['Alice', 'Bob', 'Charlie', 'David', 'Elise']
+        members = ['Anna', 'Benjamin', 'Jakob', 'Joel', 'Emil', 'Jonas', 'Lina']
 
     # Parse exclusions
     exclusions = set()
