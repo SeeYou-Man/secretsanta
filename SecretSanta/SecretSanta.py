@@ -152,7 +152,7 @@ def _make_assignments(members, exclusions=None, single_cycle=False, max_attempts
                 return False
             if frozenset((giver.id, receiver.id)) in exclusions:
                 return False
-        return True    
+        return True   
 
     if single_cycle:
         # Find k where gcd(k,n)==1 to ensure single cycle
@@ -164,7 +164,7 @@ def _make_assignments(members, exclusions=None, single_cycle=False, max_attempts
                 print(f"Single-cycle assignment found with k={k}: {len(list(zip(members, receivers)))} assignments")
                 return list(zip(members, receivers))
             else:
-                print(f"k={k} invalid") #TODO: Fix so it automatically retries with different shuffles incase of failure
+                print(f"k={k} invalid")  # TODO: Fix so it automatically retries with different shuffles incase of failure
         return None  # no valid single-cycle assignment possible
 
     # Not single_cycle: find any derangement that respects exclusions
@@ -175,6 +175,7 @@ def _make_assignments(members, exclusions=None, single_cycle=False, max_attempts
             return list(zip(members, receivers))
     # If random attempts fail, there's likely no valid assignment under these constraints
     return None
+
 
 async def send_assignments(interaction: discord.Interaction, assignments, role_name: str):
     """Send DMs for assignments and report back in channel."""
